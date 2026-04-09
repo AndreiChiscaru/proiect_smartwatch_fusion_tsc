@@ -1,0 +1,70 @@
+# InkTime - Open Source Smartwatch 
+
+Acest repository conține fișierele de design hardware (faza EVT) pentru **InkTime**, un smartwatch accesibil și open-source, bazat pe microcontrolerul nRF52840. Proiectul a fost dezvoltat de la specificații la PCB asamblat, incluzând schema electrică, design-ul plăcii și integrarea componentelor mecanice în carcasa 3D personalizată.
+
+---
+
+## 1. Diagrama Bloc a Sistemului
+
+![Diagrama Bloc](Images/diagrama_bloc.png) 
+
+*(Notă: Arhitectura de bază folosește nRF52840 ca unitate centrală, comunicând periferic cu senzorii și display-ul, având un management de putere dedicat.)*
+
+---
+
+## 2. Descrierea Funcționalității Hardware
+
+Sistemul este construit în jurul SoC-ului **nRF52840**, ales pentru conectivitatea Bluetooth Low Energy (BLE) și eficiența energetică excelentă.
+
+**Module și Interfețe Integrate:**
+* **Display E-Paper:** Conectat la microcontroler prin interfața **SPI** (MOSI, SCK, CS), asigurând un consum extrem de redus de energie, consumând curent doar în timpul refresh-ului ecranului.
+* **IMU (Senzor de mișcare):** Pentru detecția gesturilor (ex. ridicarea mâinii). Comunică exclusiv prin interfața **I2C** (SDA, SCL).
+* **Feedback Haptic (Shaker):** Un motor de vibrații controlat printr-un pin **PWM/GPIO**, utilizat pentru notificări silențioase.
+* **Interfață Utilizator:** 3 butoane fizice tip push-button conectate cu rezistențe de pull-up interne.
+* **Managementul Energiei:** * Sistemul este alimentat de o baterie Li-Po lipită direct pe pad-urile plăcii (fără conector JST) pentru a respecta constrângerea de spațiu pe axa Z.
+  * Încărcarea se face prin portul **USB-C** folosind un circuit dedicat de management al bateriei.
+  * Tensiunea este stabilizată la **3V3** printr-un convertor LDO/DC-DC pentru restul circuitelor.
+
+---
+
+## 3. Maparea Pinilor (nRF52840 Pinout)
+
+Mai jos este prezentată alocarea pinilor pentru componentele periferice principale, optimizată pentru a minimiza încrucișările de trasee pe PCB:
+
+| Componentă / Modul | Pini nRF52840 utilizați | Funcție / Interfață |
+| :--- | :--- | :--- |
+| **Display E-Paper** | P0.13, P0.15, P0.17, P0.20, P0.22 | SPI (SCK, MOSI, CS, DC, RST) |
+| **Senzor IMU** | P0.26, P0.27 | I2C (SDA, SCL) |
+| **Buton 1 (Up)** | P1.13 | GPIO (Input Pull-up) |
+| **Buton 2 (Select)** | P1.14 | GPIO (Input Pull-up) |
+| **Buton 3 (Down)** | P1.15 | GPIO (Input Pull-up) |
+| **Motor Vibrații (Shaker)**| P0.11 | GPIO (Output / PWM) |
+| **Monitorizare Baterie**| P0.02 | ADC (Analog In) |
+
+---
+
+## 4. Bill of Materials (BOM) Extras
+
+Lista componentelor principale utilizate în acest design:
+
+| Componentă | Capsulă / Pachet | Funcție | Link Achiziție / Datasheet |
+| :--- | :--- | :--- | :--- |
+| **nRF52840-QIAA-R** | QFN-73 | Microcontroler principal (SoC) | [JLC Parts](https://jlcpcb.com/parts) |
+| **LSM6DS3TR** | LGA-14 | IMU (Accelerometru + Giroscop) | [JLC Parts](https://jlcpcb.com/parts) |
+| **BQ24040DSQR** | WSON-8 | IC Management Încărcare Baterie | [JLC Parts](https://jlcpcb.com/parts) |
+| **AP2112K-3.3** | SOT-23-5 | Regulator Tensiune 3.3V (LDO) | [JLC Parts](https://jlcpcb.com/parts) |
+| **Conector FPC** | 24-pin, 0.5mm | Conector Display E-Paper | [JLC Parts](https://jlcpcb.com/parts) |
+| **Pasive (C, R)** | 0201 / 0402 | Decuplare (100nF) și Pull-up (10k) | [JLC Parts](https://jlcpcb.com/parts) |
+
+---
+
+## 5. Design Log & Decizii de Proiectare (Issue-uri Acceptate)
+
+Pentru a respecta cerințele tehnice și deadline-ul etapei EVT, au fost luate următoarele decizii de design:
+
+* **Structura PCB:** Placa are **grosimea impusă de 1mm** și a fost realizată pe 2 layere (Top și Bottom). Amplasarea componentelor a fost făcută exclusiv pe layer-ul TOP. S-a realizat un plan de masă continuu pe ambele layere, unite prin via stitching.
+* **Reguli de Rutare:** Liniile de alimentare (VCC, 3V3, VBAT, VUSB) au fost rutate manual respectând grosimea de **0.3mm**. Semnalele de date au folosit grosimea de **0.15mm**, evitându-se unghiurile drepte.
+* **Zona RF:** Sub antena Bluetooth de 2.4GHz s-a aplicat Polygon Pour Cutout pe toate straturile. Nu există plan de masă sau trasee sub antenă, pentru a preveni ecranarea.
+* **[BUG ACCEPTAT] Erori DRC și Acoperire Autorouter (89.2%):** Datorită densității masive de componente din jurul portului USB și a limitărilor mecanice foarte stricte impuse de carcasa 3D (mufele și butoanele au coordonate fixe), s-au acceptat temporar mici erori de tip *Overlap/Clearance* la condensatoarele 0201 aferente decuplării. Din același motiv de spațiu fizic limitat, Autorouter-ul a atins o acoperire maximă de 89.2%. Am decis să păstrez aceste câteva trasee nerutate pe Top în loc să mut componente pe Bottom, pentru a nu complica masiv viitorul proces de asamblare (Pick & Place pe ambele fețe crește mult costurile). Aceste conexiuni vor fi optimizate manual în sprint-ul pentru DVT.
+
+---
