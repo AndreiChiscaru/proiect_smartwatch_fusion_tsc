@@ -6,7 +6,7 @@ Acest repository conține fișierele de design hardware (faza EVT) pentru **InkT
 
 ## 1. Diagrama Bloc a Sistemului
 
-![Diagrama Bloc](Images/diagrama_bloc.png) 
+![Diagrama Bloc](Images/schematic_1.jpeg) 
 
 *(Notă: Arhitectura de bază folosește nRF52840 ca unitate centrală, comunicând periferic cu senzorii și display-ul, având un management de putere dedicat.)*
 
